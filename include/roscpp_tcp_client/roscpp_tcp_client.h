@@ -2,6 +2,7 @@
 #define ROSCPP_TCP_CLIENT_H_
 
 #include <unordered_set>
+#include <thread>
 #include <boost/asio.hpp>
 #include <nlohmann/json.hpp>
 #include <ros/ros.h>
@@ -18,6 +19,9 @@ private:
 
   boost::asio::io_service io_service_;
   boost::shared_ptr<tcp::socket> socket_;
+  static constexpr int PACKET_SIZE = 2048;
+  std::vector<char> recv_buffer_;
+  std::thread recv_thread_;
 
   std::string rosbridge_address_;
   int rosbridge_port_;
@@ -37,7 +41,7 @@ public:
 
 private:
   bool connect();
-  void connectTimerCallback(const ros::TimerEvent e);
+  void receiveCallback(const boost::system::error_code& ec, std::size_t recv_byte);
 };
 
 #include <roscpp_tcp_client/impl/roscpp_tcp_client.hpp>

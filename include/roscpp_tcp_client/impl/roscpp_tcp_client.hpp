@@ -5,12 +5,14 @@ TCPClient::TCPClient()
 {
   std::signal(SIGINT, [](int sig){
     ROS_ERROR("Ctrl+C pressed. Exiting...");
+    ros::shutdown();
     exit(1);
   });
 
   rosbridge_address_ = nh_.param<std::string>("rosbridge_address", "127.0.0.1");
   rosbridge_port_ = nh_.param<int>("rosbridge_port", 9090);
   socket_.reset(new tcp::socket(io_service_));
+  recv_buffer_.resize(PACKET_SIZE);
 }
 
 TCPClient::~TCPClient(){}
@@ -24,6 +26,12 @@ bool TCPClient::connect()
   try{
     socket_->connect(rosbridge_endpoint);
     bridge_connected_ = true;
+    socket_->async_read_some(boost::asio::buffer(recv_buffer_),
+    [&](const boost::system::error_code& ec, std::size_t recv_byte){
+      receiveCallback(ec, recv_byte);
+    });
+
+    recv_thread_ = std::thread([this](){ io_service_.run(); });
   }
   catch (std::exception & e){
     ROS_WARN_STREAM("[TCPClient] " << e.what());
@@ -31,6 +39,26 @@ bool TCPClient::connect()
   }
 
   return true;
+}
+
+void TCPClient::receiveCallback(const boost::system::error_code& ec, std::size_t recv_byte)
+{
+  if(ec){
+    ROS_WARN_STREAM("Error in receive: " << ec.message());
+    bridge_connected_ = false;
+    return;
+  }
+
+  std::string recv_str(recv_buffer_.begin(), recv_buffer_.begin() + recv_byte);
+  json recv_json = json::parse(recv_str);
+
+  // Parse and do something
+  ROS_INFO_STREAM(recv_json.dump());
+
+  socket_->async_read_some(boost::asio::buffer(recv_buffer_),
+  [&](const boost::system::error_code& ec, std::size_t recv_byte){
+    receiveCallback(ec, recv_byte);
+  });
 }
 
 void TCPClient::advertise(const std::string &topic_name, const std::string &topic_type)

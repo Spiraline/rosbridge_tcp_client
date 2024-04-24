@@ -26,8 +26,14 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(roscpp_tcp_talker src/roscpp_tcp_talker.cpp )
+add_executable(roscpp_tcp_talker src/roscpp_tcp_talker.cpp)
 target_link_libraries(roscpp_tcp_talker
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+add_executable(roscpp_tcp_listener src/roscpp_tcp_listener.cpp)
+target_link_libraries(roscpp_tcp_listener
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
