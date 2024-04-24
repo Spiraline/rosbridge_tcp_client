@@ -3,16 +3,17 @@
 
 TCPClient::TCPClient()
 {
+  std::signal(SIGINT, [](int sig){
+    ROS_ERROR("Ctrl+C pressed. Exiting...");
+    exit(1);
+  });
+
   rosbridge_address_ = nh_.param<std::string>("rosbridge_address", "127.0.0.1");
   rosbridge_port_ = nh_.param<int>("rosbridge_port", 9090);
+  socket_.reset(new tcp::socket(io_service_));
 }
 
 TCPClient::~TCPClient(){}
-
-void writeHandler(const boost::system::error_code& error)
-{
-
-}
 
 bool TCPClient::connect()
 {
@@ -21,12 +22,11 @@ bool TCPClient::connect()
   tcp::endpoint rosbridge_endpoint(rosbridge_address, rosbridge_port_);
 
   try{
-    socket_.reset(new tcp::socket(io_service_));
     socket_->connect(rosbridge_endpoint);
     bridge_connected_ = true;
   }
   catch (std::exception & e){
-    ROS_WARN_STREAM("[TCPClient] Connection Failed " << e.what());
+    ROS_WARN_STREAM("[TCPClient] " << e.what());
     return false;
   }
 
@@ -35,6 +35,12 @@ bool TCPClient::connect()
 
 void TCPClient::advertise(const std::string &topic_name, const std::string &topic_type)
 {
+  if(!bridge_connected_){
+    while(!connect()){
+      rate_.sleep();
+    }
+  }
+
   json adv_json;
   adv_json["op"] = "advertise";
   adv_json["topic"] = topic_name;
@@ -56,6 +62,12 @@ void TCPClient::advertise(const std::string &topic_name, const std::string &topi
 
 void TCPClient::subscribe(const std::string &topic_name, const std::string &topic_type, int throttle_rate = 0, int queue_length = 10)
 {
+  if(!bridge_connected_){
+    while(!connect()){
+      rate_.sleep();
+    }
+  }
+
   if(!adv_topic_set_.count(topic_name)){
     advertise(topic_name, topic_type);
   }
@@ -81,6 +93,12 @@ void TCPClient::subscribe(const std::string &topic_name, const std::string &topi
 
 void TCPClient::publish(const std::string &topic_name, const std::string &topic_type, const json &msg_json)
 {
+  if(!bridge_connected_){
+    while(!connect()){
+      rate_.sleep();
+    }
+  }
+
   if(!adv_topic_set_.count(topic_name)){
     advertise(topic_name, topic_type);
   }

@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include <nlohmann/json.hpp>
 #include <ros/ros.h>
+#include <signal.h>
 
 using boost::asio::ip::tcp;
 using json = nlohmann::json;
@@ -25,6 +26,8 @@ private:
 
   std::unordered_set<std::string> adv_topic_set_;
 
+  ros::Rate rate_{ros::Rate(1)};
+
 public:
   TCPClient();
   ~TCPClient();
@@ -34,8 +37,7 @@ public:
 
 private:
   bool connect();
-
-  void writeHandler(const boost::system::error_code& error);
+  void connectTimerCallback(const ros::TimerEvent e);
 };
 
 #include <roscpp_tcp_client/impl/roscpp_tcp_client.hpp>
