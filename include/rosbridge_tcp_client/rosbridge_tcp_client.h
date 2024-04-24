@@ -11,7 +11,7 @@
 using boost::asio::ip::tcp;
 using json = nlohmann::json;
 
-class TCPClient
+class ROSBridgeTCPClient
 {
 private:
   ros::NodeHandle nh_;
@@ -33,8 +33,8 @@ private:
   ros::Rate rate_{ros::Rate(1)};
 
 public:
-  TCPClient();
-  ~TCPClient();
+  ROSBridgeTCPClient();
+  ~ROSBridgeTCPClient();
   void advertise(const std::string &topic_name, const std::string &topic_type);
   void subscribe(const std::string &topic_name, const std::string &topic_type, int throttle_rate, int queue_length);
   void publish(const std::string &topic_name, const std::string &topic_type, const json &msg_json);

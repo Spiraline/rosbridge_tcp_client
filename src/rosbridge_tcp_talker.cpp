@@ -4,7 +4,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "rosbridge_tcp_talker");
 
-  TCPClient tcp_client;
+  ROSBridgeTCPClient tcp_client;
 
   json float32_msg;
   int cnt = 0;

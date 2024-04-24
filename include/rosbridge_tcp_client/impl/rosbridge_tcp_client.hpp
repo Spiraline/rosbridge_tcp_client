@@ -1,7 +1,7 @@
 #ifndef ROSBRIDGE_TCP_CLIENT_HPP_
 #define ROSBRIDGE_TCP_CLIENT_HPP_
 
-TCPClient::TCPClient()
+ROSBridgeTCPClient::ROSBridgeTCPClient()
 {
   std::signal(SIGINT, [](int sig){
     ROS_ERROR("Ctrl+C pressed. Exiting...");
@@ -15,9 +15,9 @@ TCPClient::TCPClient()
   recv_buffer_.resize(PACKET_SIZE);
 }
 
-TCPClient::~TCPClient(){}
+ROSBridgeTCPClient::~ROSBridgeTCPClient(){}
 
-bool TCPClient::connect()
+bool ROSBridgeTCPClient::connect()
 {
   boost::asio::ip::address rosbridge_address = boost::asio::ip::address::from_string(rosbridge_address_);
 
@@ -34,14 +34,14 @@ bool TCPClient::connect()
     recv_thread_ = std::thread([this](){ io_service_.run(); });
   }
   catch (std::exception & e){
-    ROS_WARN_STREAM("[TCPClient] " << e.what());
+    ROS_WARN_STREAM("[ROSBridgeTCPClient] " << e.what());
     return false;
   }
 
   return true;
 }
 
-void TCPClient::receiveCallback(const boost::system::error_code& ec, std::size_t recv_byte)
+void ROSBridgeTCPClient::receiveCallback(const boost::system::error_code& ec, std::size_t recv_byte)
 {
   if(ec){
     ROS_WARN_STREAM("Error in receive: " << ec.message());
@@ -61,7 +61,7 @@ void TCPClient::receiveCallback(const boost::system::error_code& ec, std::size_t
   });
 }
 
-void TCPClient::advertise(const std::string &topic_name, const std::string &topic_type)
+void ROSBridgeTCPClient::advertise(const std::string &topic_name, const std::string &topic_type)
 {
   if(!bridge_connected_){
     while(!connect()){
@@ -88,7 +88,7 @@ void TCPClient::advertise(const std::string &topic_name, const std::string &topi
   adv_topic_set_.insert(topic_name);
 }
 
-void TCPClient::subscribe(const std::string &topic_name, const std::string &topic_type, int throttle_rate = 0, int queue_length = 10)
+void ROSBridgeTCPClient::subscribe(const std::string &topic_name, const std::string &topic_type, int throttle_rate = 0, int queue_length = 10)
 {
   if(!bridge_connected_){
     while(!connect()){
@@ -119,7 +119,7 @@ void TCPClient::subscribe(const std::string &topic_name, const std::string &topi
   });
 }
 
-void TCPClient::publish(const std::string &topic_name, const std::string &topic_type, const json &msg_json)
+void ROSBridgeTCPClient::publish(const std::string &topic_name, const std::string &topic_type, const json &msg_json)
 {
   if(!bridge_connected_){
     while(!connect()){

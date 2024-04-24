@@ -4,7 +4,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "rosbridge_tcp_listener");
 
-  TCPClient tcp_client;
+  ROSBridgeTCPClient tcp_client;
 
   tcp_client.subscribe("/test_msg", "std_msgs/Float32");
 
