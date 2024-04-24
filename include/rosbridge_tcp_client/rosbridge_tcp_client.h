@@ -1,5 +1,5 @@
-#ifndef ROSCPP_TCP_CLIENT_H_
-#define ROSCPP_TCP_CLIENT_H_
+#ifndef ROSBRIDGE_TCP_CLIENT_H_
+#define ROSBRIDGE_TCP_CLIENT_H_
 
 #include <unordered_set>
 #include <thread>
@@ -44,6 +44,6 @@ private:
   void receiveCallback(const boost::system::error_code& ec, std::size_t recv_byte);
 };
 
-#include <roscpp_tcp_client/impl/roscpp_tcp_client.hpp>
+#include <rosbridge_tcp_client/impl/rosbridge_tcp_client.hpp>
 
 #endif

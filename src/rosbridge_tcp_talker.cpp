@@ -1,8 +1,8 @@
-#include <roscpp_tcp_client/roscpp_tcp_client.h>
+#include <rosbridge_tcp_client/rosbridge_tcp_client.h>
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "roscpp_tcp_talker");
+  ros::init(argc, argv, "rosbridge_tcp_talker");
 
   TCPClient tcp_client;
 

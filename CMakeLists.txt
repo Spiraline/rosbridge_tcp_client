@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(roscpp_tcp_client)
+project(rosbridge_tcp_client)
 
 add_compile_options(-std=c++17)
 
@@ -26,14 +26,14 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(roscpp_tcp_talker src/roscpp_tcp_talker.cpp)
-target_link_libraries(roscpp_tcp_talker
+add_executable(rosbridge_tcp_talker src/rosbridge_tcp_talker.cpp)
+target_link_libraries(rosbridge_tcp_talker
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
-add_executable(roscpp_tcp_listener src/roscpp_tcp_listener.cpp)
-target_link_libraries(roscpp_tcp_listener
+add_executable(rosbridge_tcp_listener src/rosbridge_tcp_listener.cpp)
+target_link_libraries(rosbridge_tcp_listener
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
