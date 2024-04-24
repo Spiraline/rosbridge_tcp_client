@@ -3,27 +3,103 @@
 
 TCPClient::TCPClient()
 {
-
+  rosbridge_address_ = nh_.param<std::string>("rosbridge_address", "127.0.0.1");
+  rosbridge_port_ = nh_.param<int>("rosbridge_port", 9090);
 }
 
-TCPClient::~TCPClient()
+TCPClient::~TCPClient(){}
+
+void writeHandler(const boost::system::error_code& error)
 {
 
 }
 
-void TCPClient::connect()
+bool TCPClient::connect()
 {
+  boost::asio::ip::address rosbridge_address = boost::asio::ip::address::from_string(rosbridge_address_);
 
+  tcp::endpoint rosbridge_endpoint(rosbridge_address, rosbridge_port_);
+
+  try{
+    socket_.reset(new tcp::socket(io_service_));
+    socket_->connect(rosbridge_endpoint);
+    bridge_connected_ = true;
+  }
+  catch (std::exception & e){
+    ROS_WARN_STREAM("[TCPClient] Connection Failed " << e.what());
+    return false;
+  }
+
+  return true;
 }
 
-void TCPClient::subscribe()
+void TCPClient::advertise(const std::string &topic_name, const std::string &topic_type)
 {
+  json adv_json;
+  adv_json["op"] = "advertise";
+  adv_json["topic"] = topic_name;
+  adv_json["type"] = topic_type;
 
+  socket_->async_write_some(boost::asio::buffer(adv_json.dump()),
+    [&](const boost::system::error_code& ec, std::size_t transfer_byte) {
+      if(ec){
+        ROS_WARN_STREAM("Error in advertise: " << ec.message());
+        bridge_connected_ = false;
+      }
+      else{
+        ROS_INFO_STREAM("Advertise " << topic_name);
+      }
+  });
+
+  adv_topic_set_.insert(topic_name);
 }
 
-void TCPClient::advertise()
+void TCPClient::subscribe(const std::string &topic_name, const std::string &topic_type, int throttle_rate = 0, int queue_length = 10)
 {
+  if(!adv_topic_set_.count(topic_name)){
+    advertise(topic_name, topic_type);
+  }
 
+  json sub_json;
+  sub_json["op"] = "subscribe";
+  sub_json["topic"] = topic_name;
+  sub_json["msgs_data"] = topic_type;
+  sub_json["throttle_rate"] = throttle_rate;
+  sub_json["queue_length"] = queue_length;
+
+  socket_->async_write_some(boost::asio::buffer(sub_json.dump()),
+    [&](const boost::system::error_code& ec, std::size_t transfer_byte) {
+      if(ec){
+        ROS_WARN_STREAM("Error in subscribe: " << ec.message());
+        bridge_connected_ = false;
+      }
+      else{
+        ROS_INFO_STREAM("Subscribe " << topic_name);
+      }
+  });
+}
+
+void TCPClient::publish(const std::string &topic_name, const std::string &topic_type, const json &msg_json)
+{
+  if(!adv_topic_set_.count(topic_name)){
+    advertise(topic_name, topic_type);
+  }
+
+  json pub_json;
+  pub_json["op"] = "publish";
+  pub_json["topic"] = topic_name;
+  pub_json["msg"] = msg_json;
+
+  socket_->async_write_some(boost::asio::buffer(pub_json.dump()),
+    [&](const boost::system::error_code& ec, std::size_t transfer_byte) {
+      if(ec){
+        ROS_WARN_STREAM("Error in publish: " << ec.message());
+        bridge_connected_ = false;
+      }
+      else{
+        ROS_INFO_STREAM("Publish " << topic_name);
+      }
+  });
 }
 
 #endif
