@@ -8,7 +8,18 @@ int main(int argc, char **argv)
 
   tcp_client.subscribe("/test_msg", "std_msgs/Float32");
 
-  ros::spin();
+  ros::Rate rate(10);
+
+  while(ros::ok()){
+    auto& mailbox = tcp_client.getMailBox();
+
+    for(const auto& [topic_name, msg]: mailbox){
+      ROS_INFO_STREAM(topic_name);
+      ROS_INFO_STREAM(msg.dump());
+    }
+
+    rate.sleep();
+  }
 
   return 0;
 }

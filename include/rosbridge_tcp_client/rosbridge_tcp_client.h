@@ -2,6 +2,8 @@
 #define ROSBRIDGE_TCP_CLIENT_H_
 
 #include <unordered_set>
+#include <unordered_map>
+#include <queue>
 #include <thread>
 #include <boost/asio.hpp>
 #include <nlohmann/json.hpp>
@@ -32,12 +34,20 @@ private:
 
   ros::Rate rate_{ros::Rate(1)};
 
+  // key: topic name
+  // value: last msg에 대한 json
+  std::unordered_map<std::string, json> mailbox_;
+
 public:
   ROSBridgeTCPClient();
   ~ROSBridgeTCPClient();
   void advertise(const std::string &topic_name, const std::string &topic_type);
   void subscribe(const std::string &topic_name, const std::string &topic_type, int throttle_rate, int queue_length);
   void publish(const std::string &topic_name, const std::string &topic_type, const json &msg_json);
+
+  inline std::unordered_map<std::string, json>& getMailBox(){
+    return mailbox_;
+  };
 
 private:
   bool connect();

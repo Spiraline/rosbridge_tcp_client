@@ -52,8 +52,20 @@ void ROSBridgeTCPClient::receiveCallback(const boost::system::error_code& ec, st
   std::string recv_str(recv_buffer_.begin(), recv_buffer_.begin() + recv_byte);
   json recv_json = json::parse(recv_str);
 
-  // Parse and do something
-  ROS_INFO_STREAM(recv_json.dump());
+  // Check validity
+  if(recv_json.find("op") != recv_json.end() && 
+    recv_json.find("topic") != recv_json.end() &&
+    recv_json.find("msg") != recv_json.end())
+  {
+    const std::string &op = recv_json["op"].get<std::string>();
+    const std::string &topic_name = recv_json["topic"].get<std::string>();
+    json &msg = recv_json["msg"];
+
+    // Insert to mailbox
+    if(op == "publish" && mailbox_.count(topic_name)){
+      mailbox_[topic_name] = msg;
+    }
+  }
 
   socket_->async_read_some(boost::asio::buffer(recv_buffer_),
   [&](const boost::system::error_code& ec, std::size_t recv_byte){
@@ -98,6 +110,7 @@ void ROSBridgeTCPClient::subscribe(const std::string &topic_name, const std::str
 
   if(!adv_topic_set_.count(topic_name)){
     advertise(topic_name, topic_type);
+    mailbox_[topic_name] = json({});
   }
 
   json sub_json;
