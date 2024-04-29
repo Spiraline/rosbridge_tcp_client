@@ -3,7 +3,6 @@
 
 #include <unordered_set>
 #include <unordered_map>
-#include <queue>
 #include <thread>
 #include <boost/asio.hpp>
 #include <nlohmann/json.hpp>
@@ -17,15 +16,14 @@ class ROSBridgeTCPClient
 {
 private:
   ros::NodeHandle nh_;
-  ros::Timer connect_timer_;
-
   boost::asio::io_service io_service_;
   boost::shared_ptr<tcp::socket> socket_;
   static constexpr int PACKET_SIZE = 2048;
+  const std::string DELIMITER = "{\"op\":";
   std::vector<char> recv_buffer_;
   std::thread recv_thread_;
 
-  std::string rosbridge_address_;
+  std::string rosbridge_ip_;
   int rosbridge_port_;
 
   bool bridge_connected_{false};

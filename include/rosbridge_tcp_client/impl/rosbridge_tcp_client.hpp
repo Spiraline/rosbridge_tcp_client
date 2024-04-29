@@ -1,15 +1,15 @@
 #ifndef ROSBRIDGE_TCP_CLIENT_HPP_
 #define ROSBRIDGE_TCP_CLIENT_HPP_
 
-ROSBridgeTCPClient::ROSBridgeTCPClient()
+ROSBridgeTCPClient::ROSBridgeTCPClient():
+  nh_("~")
 {
   std::signal(SIGINT, [](int sig){
     ROS_ERROR("Ctrl+C pressed. Exiting...");
-    ros::shutdown();
     exit(1);
   });
 
-  rosbridge_address_ = nh_.param<std::string>("rosbridge_address", "127.0.0.1");
+  rosbridge_ip_ = nh_.param<std::string>("rosbridge_ip", "127.0.0.1");
   rosbridge_port_ = nh_.param<int>("rosbridge_port", 9090);
   socket_.reset(new tcp::socket(io_service_));
   recv_buffer_.resize(PACKET_SIZE);
@@ -19,7 +19,7 @@ ROSBridgeTCPClient::~ROSBridgeTCPClient(){}
 
 bool ROSBridgeTCPClient::connect()
 {
-  boost::asio::ip::address rosbridge_address = boost::asio::ip::address::from_string(rosbridge_address_);
+  boost::asio::ip::address rosbridge_address = boost::asio::ip::address::from_string(rosbridge_ip_);
 
   tcp::endpoint rosbridge_endpoint(rosbridge_address, rosbridge_port_);
 
@@ -50,20 +50,35 @@ void ROSBridgeTCPClient::receiveCallback(const boost::system::error_code& ec, st
   }
 
   std::string recv_str(recv_buffer_.begin(), recv_buffer_.begin() + recv_byte);
-  json recv_json = json::parse(recv_str);
 
-  // Check validity
-  if(recv_json.find("op") != recv_json.end() && 
-    recv_json.find("topic") != recv_json.end() &&
-    recv_json.find("msg") != recv_json.end())
-  {
-    const std::string &op = recv_json["op"].get<std::string>();
-    const std::string &topic_name = recv_json["topic"].get<std::string>();
-    json &msg = recv_json["msg"];
+  // TCP는 메시지 경계가 없으므로 여러 메시지가 한번에 들어올 수 있다.
+  // 따라서 op로 시작하는 모든 메시지를 처리한다.
+  std::vector<std::string> substr_list;
+  std::size_t start_idx = 0;
+  std::size_t end_idx = recv_str.find(DELIMITER, 1);
+  while(end_idx != std::string::npos){
+    substr_list.push_back(recv_str.substr(start_idx, end_idx - start_idx));
+    start_idx = end_idx;
+    end_idx = recv_str.find(DELIMITER, 1);
+  }
+  substr_list.push_back(recv_str.substr(start_idx));
 
-    // Insert to mailbox
-    if(op == "publish" && mailbox_.count(topic_name)){
-      mailbox_[topic_name] = msg;
+  for(const std::string& recv_substr: substr_list){
+    json recv_json = json::parse(recv_substr);
+
+    // Check validity
+    if(recv_json.find("op") != recv_json.end() && 
+      recv_json.find("topic") != recv_json.end() &&
+      recv_json.find("msg") != recv_json.end())
+    {
+      const std::string &op = recv_json["op"].get<std::string>();
+      const std::string &topic_name = recv_json["topic"].get<std::string>();
+      json &msg = recv_json["msg"];
+
+      // Insert to mailbox
+      if(op == "publish" && mailbox_.count(topic_name)){
+        mailbox_[topic_name] = msg;
+      }
     }
   }
 
