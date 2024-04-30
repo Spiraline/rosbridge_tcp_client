@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(rosbridge_tcp_client)
+project(rosbridge_client)
 
 add_compile_options(-std=c++17)
 
@@ -34,6 +34,18 @@ target_link_libraries(rosbridge_tcp_talker
 
 add_executable(rosbridge_tcp_listener src/rosbridge_tcp_listener.cpp)
 target_link_libraries(rosbridge_tcp_listener
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+add_executable(rosbridge_websocket_talker src/rosbridge_websocket_talker.cpp)
+target_link_libraries(rosbridge_websocket_talker
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+add_executable(rosbridge_websocket_listener src/rosbridge_websocket_listener.cpp)
+target_link_libraries(rosbridge_websocket_listener
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
